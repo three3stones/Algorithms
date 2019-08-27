@@ -1,0 +1,23 @@
+ order_id  user_no  amount
+        1	u0001	100
+        2	u0001	300
+        3	u0001	300
+        4	u0001	800
+        5	u0001	900
+        6	u0002	500
+        7	u0002	600
+        8	u0002	300
+        9	u0002	800
+
+# 求各个user的中位数
+select user_no, avg(amount) as median from (
+select user_no,amount, row_number() over(PARTITION by user_no ORDER BY amount) as rank1,
+count(*) over(PARTITION by user_no) as count1 from order_info ) as t
+where rank1 BETWEEN count1/2.0 and count1/2.0 +1
+group by user_no;
+
+# 求所有user的众数
+select amount from order_info
+GROUP BY amount
+having count(*) >= 
+all(select count(*) from order_info GROUP BY amount);

@@ -1,0 +1,39 @@
+id  user_name  course  score
+1	A	math	 34
+2	A	chinese	 58
+3	A	english	 58
+4	B	math	 45
+5	B	chinese	 87
+6	B	english	 45
+7	C	math	 76
+8	C	chinese	 34
+9	C	english	 89
+
+
+# 行转列
+
+A	34	58	58
+B	45	87	45
+C	76	34	89
+
+SELECT user_name ,
+    MAX(CASE course WHEN 'math' THEN score ELSE 0 END ) math,
+    MAX(CASE course WHEN 'chinese' THEN score ELSE 0 END ) chinese,
+    MAX(CASE course WHEN 'english' THEN score ELSE 0 END ) english
+FROM TEST_TB_GRADE
+GROUP BY USER_NAME;
+
+# 列转行
+
+SELECT userid,'chinese' AS course,cn_score AS score FROM tb_score1
+UNION ALL
+SELECT userid,'math' AS course,math_score AS score FROM tb_score1
+UNION ALL
+SELECT userid,'english' AS course,en_score AS score FROM tb_score1
+ORDER BY userid
+
+
+附：UNION与UNION ALL的区别：
+1.对重复结果的处理：UNION会去掉重复记录，UNION ALL不会；
+2.对排序的处理：UNION会排序，UNION ALL只是简单地将两个结果集合并；
+3.效率方面的区别：因为UNION 会做去重和排序处理，因此效率比UNION ALL慢很多；

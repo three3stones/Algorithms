@@ -1,0 +1,51 @@
+# 计算用户的留存率
+id      login_time
+1	2019-08-11 00:00:00
+1	2019-08-12 00:00:00
+1	2019-08-13 00:00:00
+1	2019-08-14 00:00:00
+1	2019-08-15 00:00:00
+2	2019-08-12 00:00:00
+2	2019-08-13 00:00:00
+2	2019-08-15 00:00:00
+3	2019-08-11 00:00:00
+3	2019-08-12 00:00:00
+3	2019-08-14 00:00:00
+3	2019-08-16 00:00:00
+4	2019-08-12 00:00:00
+4	2019-08-13 00:00:00
+4	2019-08-14 00:00:00
+5	2019-08-11 00:00:00
+5	2019-08-14 00:00:00
+5	2019-08-15 00:00:00
+5	2019-08-17 00:00:00
+
+第一步：date_format 转换时间数据的类型，取出日期部分
+第二步：first_value(logtime) 窗口函数取出每一个用户第一次登录的日期
+第三步：datediff 计算用户第一次登录和后续登录的天数差，表示第几日登录过
+第四步：对first_day字段分组，求出次日，二日，三日等等的留存人数
+第五步：利用列除法求出留存率
+
+
+select first_day, 
+lc1/lc0 as lc1_rate,
+lc2/lc0 as lc2_rate,
+lc3/lc0 as lc3_rate,
+lc4/lc0 as lc4_rate,
+lc5_plus/lc0 as lc5_plus_rate
+from(
+select first_day,
+sum(case when diff = 0 then 1 else 0 end) as lc0,
+sum(case when diff = 1 then 1 else 0 end) as lc1,
+sum(case when diff = 2 then 1 else 0 end) as lc2,
+sum(case when diff = 3 then 1 else 0 end) as lc3,
+sum(case when diff = 4 then 1 else 0 end) as lc4,
+sum(case when diff >= 5 then 1 else 0 end) as lc5_plus
+from (
+select first_day, datediff(logtime,first_day) as diff 
+from (
+select t.*,first_value(logtime) over(partition by id order by logtime asc) as first_day 
+from 
+	(
+select id,date_format(login_time, '%Y-%m-%d') as logtime from login) as t) as t1) as t2
+group by first_day) as t3;
