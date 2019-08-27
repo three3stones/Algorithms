@@ -1,0 +1,35 @@
+# 给定一个频数表，求出它的中位数
+
+num  freq
+2	1
+3	2
+4	4
+5	7
+
+第一步：求出每个num对应的索引,表示num的范围 [first_index,last_index]
+
+num  freq first_index last_index
+2	1	1	1
+3	2	2	3
+4	4	4	7
+5	7	8	14
+
+第二步：根据中位数定义来选择对应范围中的num
+        比如，本题总个数为14，中位数的位置为14/2=7 和 14/2+1=8，然后检索出覆盖此位置的num，然后求平均即可
+        如果总个数为奇数时，则其中一个0.5的数不会被任何一个范围包括
+
+
+select avg(num) as median 
+from( 
+select num, freq, (last_index+1-freq) as first_index, last_index 
+from(
+select num, freq, sum(freq)over(rows BETWEEN unbounded preceding and current row) last_index from frequency) as t)
+as t1
+where (select SUM(freq) from frequency)/2 BETWEEN first_index and last_index
+or (select SUM(freq) from frequency)/2 +1 BETWEEN first_index and last_index;
+
+
+2	1	1	1
+3	2	2	3
+4	4	4	7
+5	7	8	14
