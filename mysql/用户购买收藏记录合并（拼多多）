@@ -1,0 +1,71 @@
+给定两张表buy和fork分别记录用户的购买记录、收藏记录
+返回状态“已收藏已购买”“已收藏未购买”“未收藏已购买”，以（0,1）表示
+
+buy表
+user_id  item_id  buy_time
+1	201	2008-09-04
+1	206	2008-09-04
+2	203	2008-09-04
+3	204	2008-09-04
+
+fork表
+user_id  item_id  fork_time
+1	203	2008-09-04
+1	201	2008-09-04
+1	205	2008-09-04
+4	203	2008-09-04
+3	204	2008-09-04
+2	201	2008-09-04
+
+
+第一步：对两个表的user_id和item_id使用全外连接    (mysql的全外连接使用left join和right join的结果，然后union)
+
+1	201	2008-09-04	1	201	2008-09-04
+3	204	2008-09-04	3	204	2008-09-04
+1	206	2008-09-04			
+2	203	2008-09-04			
+                    1	203	2008-09-04
+                    1	205	2008-09-04
+                    4	203	2008-09-04
+                    2	201	2008-09-04
+
+第二步：使用 ifnull(expr1, expr2) 补全两列 user_id和item_id
+
+1	201	2008-09-04	1	201	2008-09-04	1	201
+3	204	2008-09-04	3	204	2008-09-04	3	204
+1	206	2008-09-04				        1	206
+2	203	2008-09-04				        2	203
+                    1	203	2008-09-04	1	203
+                    1	205	2008-09-04	1	205
+                    4	203	2008-09-04	4	203
+                    2	201	2008-09-04	2	201
+
+第三步：对buy_time和fork_time的取值是否为空，作为case when的判断条件生成结果
+
+user_id  item_id  buy_fork  notbuy_fork  buy_notfork 
+1	201	 1	 0	 0
+1	203	 0	 1	 0
+1	205	 0   1	 0
+1	206	 0 	 0	 1
+2	201	 0	 1	 0
+2	203	 0	 0	 1
+3	204	 1	 0	 0 
+4	203	 0	 1	 0
+
+
+
+select user_id_all as user_id, item_id_all as item_id,
+(case when buy_time is not null and fork_time is not null then 1 else 0 end) as buy_fork,
+(case when buy_time is null and fork_time is not null then 1 else 0 end) as notbuy_fork,
+(case when buy_time is not null and fork_time is null then 1 else 0 end) as buy_notfork
+from(
+select t.*,
+IFNULL(user_id,user_id1) as user_id_all,
+IFNULL(item_id,item_id1) as item_id_all
+from (
+select b.user_id, b.item_id, b.buy_time, f.user_id as user_id1, f.item_id as item_id1, f.fork_time 
+from buy b left outer join fork f ON b.user_id=f.user_id AND b.item_id=f.item_id
+union 
+select b.user_id, b.item_id, b.buy_time, f.user_id as user_id1, f.item_id as item_id1, f.fork_time 
+from buy b right outer join fork f ON b.user_id=f.user_id AND b.item_id=f.item_id) as t) as t1
+order by user_id_all, item_id_all;
