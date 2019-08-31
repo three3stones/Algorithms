@@ -1,0 +1,18 @@
+统计浏览不同页面数的用户对应的平均年龄
+
+pv_log(用户浏览记录表）：pv_id(页面id），user_id(用户id），creat_time(访问时间)
+dimuser(用户注册记录表）：user_id(用户id），age(年龄）,creat_time(注册时间）
+
+主要注意一点：
+    用户的年龄和注册时间是对应的
+    访问时间的年龄不一定是注册表的年龄
+
+1. 首先算出用户的出生日期
+2. 两表链接，计算真实年龄
+
+
+select pv_id, avg(year(creat_time)-year(birth_year)) as avg_age 
+from pv_log a left join 
+(select user_id, year(creat_time)-age as birth_year from dimuser) as b
+on a.user_id = b.user_id
+group by a.pv_id;

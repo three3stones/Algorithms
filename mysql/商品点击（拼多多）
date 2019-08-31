@@ -1,0 +1,15 @@
+用户点击商品之后的订单算是这次点击产生的订单；
+多次点击后产生的订单，算订单创建前最后一次点击产生的订单，求有订单商品的点击及订单号
+
+tbl_order(用户订单表）：user_id（用户id）, order_id（订单号）, order_goods（订单商品id）, order_time（预定时间）
+
+tblclk(用户商品点击明细表）：clk_id(点击id）, user_id, clk_time(点击时间）, clk_goods（点击的商品id，和order_goods对应）
+
+with base0 as
+(
+select a.usr_id, a.ordr_id, a.ord_goods, b.clk_id, max(b.clk_time) over(partition by clk_goods)
+from tbl_order a left join tblclk b
+on a.user_id = b.user_id and a.order_goods = b.clk_goods
+where b.clk_time < a.order_time             # 排除点击时间大于预定时间的记录
+)
+select clk_id, order_id from base0
